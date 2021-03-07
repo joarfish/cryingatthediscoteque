@@ -5,18 +5,15 @@ using Helpers;
 using TMPro;
 using UnityEngine;
 
-namespace Game.Systems
-{
-    public enum GameState
-    {
+namespace Game.Systems {
+    public enum GameState {
         Paused,
         Running,
         GameOver,
         LevelComplete
     }
 
-    public class GameLogic
-    {
+    public class GameLogic {
         private GameEventSystem _gameEventSystem;
 
         [Inject] private ApplicationEventSystem _appEventSystem;
@@ -24,13 +21,11 @@ namespace Game.Systems
 
         private GameState _state;
 
-        public GameLogic()
-        {
+        public GameLogic() {
             SimpleDependencyInjection.getInstance().Inject(this);
         }
 
-        public void PrepareGame()
-        {
+        public void PrepareGame() {
             _appEventSystem.LevelReady += StartGame;
             _gameEventSystem = new GameEventSystem();
 
@@ -40,8 +35,7 @@ namespace Game.Systems
             _gameEventSystem.OnDronesCoughtPlayer += handleDronesCaughtPlayer;
         }
 
-        public void StartGame()
-        {
+        public void StartGame() {
             SwitchState(GameState.Paused);
             _appEventSystem.LevelReady -= StartGame;
             _gameEventSystem.OnPositionChanged += checkFallingToDeath;
@@ -49,21 +43,18 @@ namespace Game.Systems
             _scheduler.StartCoroutine(Countdown());
         }
 
-        private void SwitchState(GameState state)
-        {
+        private void SwitchState(GameState state) {
             _state = state;
             _gameEventSystem.SendGameStateChanged(_state);
         }
 
-        IEnumerator Countdown()
-        {
-            GameObject countdown = (GameObject)UnityEngine.Object.Instantiate(Resources.Load("countdown"));
+        IEnumerator Countdown() {
+            GameObject countdown = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("countdown"));
             countdown.name = "Countdown";
 
             TextMeshProUGUI text = countdown.GetComponentInChildren<TextMeshProUGUI>();
 
-            for (int i = 0; i < 3; i++)
-            {
+            for (int i = 0; i < 3; i++) {
                 text.text = (3 - i).ToString();
                 yield return new WaitForSeconds(1);
             }
@@ -73,29 +64,24 @@ namespace Game.Systems
             UnityEngine.Object.Destroy(countdown);
         }
 
-        void checkFallingToDeath(Vector3 position)
-        {
-            if (_state == GameState.Running && position.y < -5.0f)
-            {
+        void checkFallingToDeath(Vector3 position) {
+            if (_state == GameState.Running && position.y < -5.0f) {
                 SwitchState(GameState.GameOver);
                 _appEventSystem.SendGameOver();
             }
         }
 
-        void handleReachedGoal()
-        {
+        void handleReachedGoal() {
             SwitchState(GameState.LevelComplete);
             _appEventSystem.SendLevelDone();
         }
 
-        void handleDronesCaughtPlayer()
-        {
+        void handleDronesCaughtPlayer() {
             SwitchState(GameState.GameOver);
             _appEventSystem.SendGameOver();
         }
 
-        ~GameLogic()
-        {
+        ~GameLogic() {
             SimpleDependencyInjection.getInstance().Unbind<GameEventSystem>();
             _appEventSystem.LevelReady -= StartGame;
             _gameEventSystem.OnReachedGoalArea -= handleReachedGoal;

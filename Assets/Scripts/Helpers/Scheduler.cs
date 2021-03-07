@@ -3,8 +3,5 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Helpers {
-    public class Scheduler : MonoBehaviour
-    {
-
-    }
+    public class Scheduler : MonoBehaviour { }
 }

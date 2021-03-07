@@ -2,10 +2,8 @@
 using Architecture;
 using UnityEngine;
 
-namespace Game.Systems
-{
-    public class GameEventSystem : IInjectable
-    {
+namespace Game.Systems {
+    public class GameEventSystem : IInjectable {
         public event Action<GameState> OnGameStateChanged;
         public event Action OnReachedGoalArea;
         public event Action OnDronesCoughtPlayer;
@@ -16,41 +14,32 @@ namespace Game.Systems
 
         public event Action<float> OnUpdateTrailLength;
 
-        public void SendGroundedChanged(bool grounded)
-        {
+        public void SendGroundedChanged(bool grounded) {
             OnGroundedChanged?.Invoke(grounded);
         }
 
-        public void SendRotationChanged(float rotation)
-        {
+        public void SendRotationChanged(float rotation) {
             OnRotationChanged?.Invoke(rotation);
         }
 
-        public void SendPositionChanged(Vector3 position)
-        {
+        public void SendPositionChanged(Vector3 position) {
             OnPositionChanged?.Invoke(position);
         }
 
-        public void SendUpdateTrailLength(float length)
-        {
+        public void SendUpdateTrailLength(float length) {
             OnUpdateTrailLength?.Invoke(length);
         }
 
-        public void SendGameStateChanged(GameState state)
-        {
+        public void SendGameStateChanged(GameState state) {
             OnGameStateChanged?.Invoke(state);
         }
 
-        public void SendReachedGoalArea()
-        {
+        public void SendReachedGoalArea() {
             OnReachedGoalArea?.Invoke();
         }
 
-        public void SendDronesReachedPlayer()
-        {
+        public void SendDronesReachedPlayer() {
             OnDronesCoughtPlayer?.Invoke();
         }
     }
 }
-
-

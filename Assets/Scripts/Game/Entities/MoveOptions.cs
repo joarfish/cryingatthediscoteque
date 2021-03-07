@@ -1,45 +1,39 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEditor.UI;
+using UnityEngine;
 
-namespace Game.Entities
-{
-    public class MoveOptions : MonoBehaviour
-    {
+namespace Game.Entities {
+    public class MoveOptions : MonoBehaviour {
+        public Rhythm rhythm;
+
         private Mesh _mesh;
         private Material _material;
-        private float _timer = 0.0f;
         private int _rhythmTimePropertyIndex;
         private AnimationCurve _animationCurve;
-    
-        void Awake()
-        {
-            _mesh = new Mesh { name = "OptionsMesh" };
+
+        private void Awake() {
+            CreateMesh();
             gameObject.AddComponent<MeshFilter>().sharedMesh = _mesh;
-        
+
             _material = new Material(Shader.Find("Unlit/MovementOptions"));
             gameObject.AddComponent<MeshRenderer>().material = _material;
-            
+
             _rhythmTimePropertyIndex = Shader.PropertyToID("_RhythmTime");
 
             _animationCurve = new AnimationCurve();
             _animationCurve.AddKey(0.0f, 0.0f);
-            _animationCurve.AddKey(0.25f, 0.125f);
-            _animationCurve.AddKey(0.5f, 0.4f);
-            _animationCurve.AddKey(0.75f, 0.75f);
+            _animationCurve.AddKey(0.5f, 0.0f);
+            _animationCurve.AddKey(0.90f, 1.0f);
             _animationCurve.AddKey(1.0f, 1.0f);
-
-            CreateMesh();
         }
 
-        void Update()
-        {
-            _timer = (_timer + Time.deltaTime) % 1.0f;
-            _material.SetFloat(_rhythmTimePropertyIndex,_animationCurve.Evaluate(_timer / 1.0f));
+        private void Update() {
+            _material.SetFloat(_rhythmTimePropertyIndex, _animationCurve.Evaluate(rhythm.getTimeFragment()));
         }
 
-        private void CreateMesh()
-        {
-            var vertices = new Vector3[]
-            {
+        private void CreateMesh() {
+            _mesh = new Mesh {name = "OptionsMesh"};
+            var vertices = new Vector3[] {
                 new Vector3(-0.333333f, 0.0f, 0.333333f), // 0
                 new Vector3(0.333333f, 0.0f, 0.333333f), // 1
                 new Vector3(-0.333333f, 0.0f, -0.333333f), // 2
@@ -55,8 +49,7 @@ namespace Game.Entities
             };
 
 
-            var indices = new[]
-            {
+            var indices = new[] {
                 4, 1, 0,
                 4, 5, 1,
                 1, 6, 7,

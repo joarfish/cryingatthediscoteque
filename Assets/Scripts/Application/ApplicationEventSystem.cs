@@ -1,11 +1,8 @@
 ﻿using System;
 using Architecture;
 
-namespace Application
-{
-
-    public class ApplicationEventSystem : IInjectable
-    {
+namespace Application {
+    public class ApplicationEventSystem : IInjectable {
         public event Action StartGame;
         public event Action RestartLevel;
         public event Action NextLevel;
@@ -18,47 +15,36 @@ namespace Application
 
         public event Action LevelReady;
 
-        public void SendStartGame()
-        {
+        public void SendStartGame() {
             StartGame?.Invoke();
         }
 
-        public void SendRestartLevel()
-        {
+        public void SendRestartLevel() {
             RestartLevel?.Invoke();
         }
 
-        public void SendNextLevel()
-        {
+        public void SendNextLevel() {
             NextLevel?.Invoke();
         }
 
-        public void SendEndGame()
-        {
+        public void SendEndGame() {
             EndGame?.Invoke();
         }
 
-        public void SendGameOver()
-        {
+        public void SendGameOver() {
             GameOver?.Invoke();
         }
 
-        public void SendLevelReady()
-        {
+        public void SendLevelReady() {
             LevelReady?.Invoke();
         }
 
-        public void SendLevelDone()
-        {
+        public void SendLevelDone() {
             LevelDone?.Invoke();
         }
 
-        public void SendShowCountdown()
-        {
+        public void SendShowCountdown() {
             ShowCountdown?.Invoke();
         }
     }
-
 }
-
-

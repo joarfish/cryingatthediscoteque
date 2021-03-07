@@ -7,10 +7,8 @@ using System;
 using Game.Configuration;
 using Game.Systems;
 
-namespace Application
-{
-    public class Main : MonoBehaviour
-    {
+namespace Application {
+    public class Main : MonoBehaviour {
         public GameConfiguration GameConfig;
 
         private ApplicationEventSystem _appEventSystem;
@@ -23,21 +21,18 @@ namespace Application
 
         private Scene _rootScene;
 
-        private void Start()
-        {
+        private void Start() {
             MainMenu();
             PreloadLoadingScreen();
         }
 
-        private void Awake()
-        {
+        private void Awake() {
             SetupServices();
 
             _rootScene = SceneManager.GetActiveScene();
         }
 
-        private void OnEnable()
-        {
+        private void OnEnable() {
             _appEventSystem.StartGame += StartGame;
             _appEventSystem.RestartLevel += RestartLevel;
             _appEventSystem.EndGame += EndGame;
@@ -45,8 +40,7 @@ namespace Application
             _appEventSystem.LevelDone += LevelDone;
         }
 
-        private void OnDisable()
-        {
+        private void OnDisable() {
             _appEventSystem.StartGame -= StartGame;
             _appEventSystem.RestartLevel -= RestartLevel;
             _appEventSystem.EndGame -= EndGame;
@@ -54,8 +48,7 @@ namespace Application
             _appEventSystem.LevelDone -= LevelDone;
         }
 
-        void SetupServices()
-        {
+        void SetupServices() {
             SimpleDependencyInjection di = SimpleDependencyInjection.getInstance();
 
             _appEventSystem = new ApplicationEventSystem();
@@ -66,18 +59,15 @@ namespace Application
             Debug.Log("Bound all services.");
         }
 
-        void PreloadLoadingScreen()
-        {
+        void PreloadLoadingScreen() {
             StartCoroutine(LoadSceneInactive(GameConfig.loadingScreen));
         }
 
-        void MainMenu()
-        {
+        void MainMenu() {
             StartCoroutine(LoadScene(GameConfig.mainMenu));
         }
 
-        void StartGame()
-        {
+        void StartGame() {
             _gameLogic = new GameLogic();
             _gameLogic.PrepareGame();
 
@@ -87,9 +77,7 @@ namespace Application
             ));
         }
 
-        void RestartLevel()
-        {
-
+        void RestartLevel() {
             StartCoroutine(RunSequentially(
                 CleanupScenes,
                 UnloadLevel,
@@ -99,8 +87,7 @@ namespace Application
             _gameLogic.PrepareGame();
         }
 
-        void EndGame()
-        {
+        void EndGame() {
             StartCoroutine(RunSequentially(
                 CleanupScenes,
                 () => LoadScene(GameConfig.mainMenu),
@@ -110,37 +97,28 @@ namespace Application
             _gameLogic = null;
         }
 
-        void GameOver()
-        {
+        void GameOver() {
             StartCoroutine(LoadScene(GameConfig.gameOverScreen));
         }
 
-        void LevelDone()
-        {
+        void LevelDone() {
             StartCoroutine(LoadScene("LevelDone"));
         }
 
         delegate IEnumerator Job();
 
-        IEnumerator RunSequentially(params Job[] fns)
-        {
-            for (int i = 0; i < fns.Length; i++)
-            {
+        IEnumerator RunSequentially(params Job[] fns) {
+            for (int i = 0; i < fns.Length; i++) {
                 yield return fns[i]();
             }
         }
 
-        IEnumerator CleanupScenes()
-        {
+        IEnumerator CleanupScenes() {
             int unloaded = 0;
 
-            _cleanupStack.ForEach((sceneBuildIndex) =>
-            {
+            _cleanupStack.ForEach((sceneBuildIndex) => {
                 var unloadOperation = SceneManager.UnloadSceneAsync(sceneBuildIndex);
-                unloadOperation.completed += (operation) =>
-                {
-                    unloaded++;
-                };
+                unloadOperation.completed += (operation) => { unloaded++; };
             });
 
             while (unloaded != _cleanupStack.Count) yield return null;
@@ -150,13 +128,12 @@ namespace Application
             yield return new WaitForEndOfFrame();
         }
 
-        IEnumerator LoadScene(string name, bool addToCleanupStack = true, Action<AsyncOperation> callback = null)
-        {
+        IEnumerator LoadScene(string name, bool addToCleanupStack = true, Action<AsyncOperation> callback = null) {
             var loadOperation = SceneManager.LoadSceneAsync(name, LoadSceneMode.Additive);
-            if (addToCleanupStack) loadOperation.completed += (operation) =>
-            {
-                _cleanupStack.Add(SceneManager.GetSceneByName(name).buildIndex);
-            };
+            if (addToCleanupStack)
+                loadOperation.completed += (operation) => {
+                    _cleanupStack.Add(SceneManager.GetSceneByName(name).buildIndex);
+                };
 
             if (callback != null) loadOperation.completed += callback;
 
@@ -165,11 +142,9 @@ namespace Application
             yield return new WaitForEndOfFrame();
         }
 
-        IEnumerator UnloadScene(string name, Action<AsyncOperation> callback = null)
-        {
+        IEnumerator UnloadScene(string name, Action<AsyncOperation> callback = null) {
             var unloadOperation = SceneManager.UnloadSceneAsync(name);
-            unloadOperation.completed += (operation) =>
-            {
+            unloadOperation.completed += (operation) => {
                 _cleanupStack.Remove(SceneManager.GetSceneByName(name).buildIndex);
             };
 
@@ -180,10 +155,8 @@ namespace Application
             yield return new WaitForEndOfFrame();
         }
 
-        private IEnumerator LoadSceneInactive(string name, Action<AsyncOperation> callback = null)
-        {
-            void SetInactive(AsyncOperation operation)
-            {
+        private IEnumerator LoadSceneInactive(string name, Action<AsyncOperation> callback = null) {
+            void SetInactive(AsyncOperation operation) {
                 callback?.Invoke(operation);
                 Scene loadScene = default;
 
@@ -191,8 +164,7 @@ namespace Application
 
                 GameObject[] objects = loadScene.GetRootGameObjects();
 
-                foreach (var t in objects)
-                {
+                foreach (var t in objects) {
                     t.SetActive(false);
                 }
             }
@@ -200,14 +172,12 @@ namespace Application
             yield return LoadScene(name, false, SetInactive);
         }
 
-        IEnumerator LoadLevel(int number)
-        {
+        IEnumerator LoadLevel(int number) {
             if (GameConfig.levels.Length < number) yield break;
             yield return LoadLevel(GameConfig.levels[number - 1]);
         }
 
-        IEnumerator LoadLevel(string name)
-        {
+        IEnumerator LoadLevel(string name) {
             SceneManager.LoadSceneAsync(GameConfig.HUD, LoadSceneMode.Additive);
 
             yield return LoadScene(name, false, (op) => {
@@ -217,8 +187,7 @@ namespace Application
             });
         }
 
-        IEnumerator UnloadLevel()
-        {
+        IEnumerator UnloadLevel() {
             SceneManager.SetActiveScene(_rootScene);
 
             var opUnloadLevel = SceneManager.UnloadSceneAsync(_currentLevel);
