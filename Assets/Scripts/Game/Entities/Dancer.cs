@@ -91,4 +91,8 @@ public class Dancer : MonoBehaviour {
     public List<Vector3> GetWaypoints() {
         return waypoints;
     }
+
+    public float GetDancerY() {
+        return transform.position.y;
+    }
 }

@@ -2,6 +2,7 @@
 
 public class PlayerControls : MonoBehaviour {
     public Rhythm rhythm;
+    public AnimationCurve MovementCurve;
 
     private FloorLayout _floorLayout;
 
@@ -11,35 +12,55 @@ public class PlayerControls : MonoBehaviour {
     private readonly Vector3 _south = new Vector3(0.0f, 0.0f, -1.0f);
     private readonly Vector3 _west = new Vector3(-1.0f, 0.0f, 0.0f);
     private readonly Vector3 _east = new Vector3(1.0f, 0.0f, 0.0f);
+    
+    private Vector3 _targetPosition = Vector3.zero;
+    private Vector3 _currentPosition = Vector3.zero;
+    private float _animationTimer = 0f;
+    private readonly float _movementSpeed = 0.125f;
 
     void Start() {
         _floorLayout = FindObjectOfType<FloorLayout>();
+        _targetPosition = _currentPosition = transform.position;
     }
 
     void Update() {
+        
+        _animationTimer += Time.deltaTime;
+        if (_currentPosition != _targetPosition) {
+            transform.position = Vector3.Lerp(_currentPosition, _targetPosition, MovementCurve.Evaluate(_animationTimer / _movementSpeed));
+        }
+        
         if (!rhythm.isMoveAllowed()) {
             return;
         }
 
-        _nextPosition = transform.position;
+        bool newInput = false;
 
         if (Input.GetKeyDown(KeyCode.UpArrow)) {
-            _nextPosition += _north;
+            _nextPosition = _targetPosition +_north;
+            newInput = true;
         }
         else if (Input.GetKeyDown(KeyCode.DownArrow)) {
-            _nextPosition += _south;
+            _nextPosition = _targetPosition + _south;
+            newInput = true;
         }
         else if (Input.GetKeyDown(KeyCode.LeftArrow)) {
-            _nextPosition += _west;
+            _nextPosition = _targetPosition + _west;
+            newInput = true;
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow)) {
-            _nextPosition += _east;
+            _nextPosition = _targetPosition + _east;
+            newInput = true;
         }
 
-        _nextField.SetFromVector3(_nextPosition);
+        if (newInput) {
+            _nextField.SetFromVector3(_nextPosition);
 
-        if (_floorLayout.IsFieldAllowed(ref _nextField)) {
-            transform.position = _nextPosition;
+            if (_floorLayout.IsFieldAllowed(ref _nextField)) {
+                _currentPosition = _targetPosition;
+                _targetPosition = _nextPosition;
+                _animationTimer = 0.0f;
+            }
         }
     }
 }
