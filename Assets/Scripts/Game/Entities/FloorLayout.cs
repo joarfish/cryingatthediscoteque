@@ -7,9 +7,11 @@ using UnityEngine;
 public enum FieldStatus {
     Free,
     Occupied,
-    Invalid
+    Invalid,
+    Player,
 }
 
+[Serializable]
 public struct Field {
     public Field(int x, int z) {
         this.x = x;
@@ -28,9 +30,10 @@ public struct Field {
         return new Vector3((float) this.x, y, (float) this.z);
     }
 
-    public void SetFromVector3(Vector3 vector) {
+    public Field SetFromVector3(Vector3 vector) {
         x = (int) vector.x;
         z = (int) vector.z;
+        return this;
     }
 
     public int x;
@@ -40,10 +43,7 @@ public struct Field {
 public class FloorLayout : MonoBehaviour {
     [Range(1, 20)] public int tilesX = 1;
     [Range(1, 20)] public int tilesZ = 1;
-
-#if (UNITY_EDITOR)
-    public bool AlwaysShowGrid = false;
-#endif
+    public List<Field> invalidFields;
 
     private FieldStatus[,] _layout;
 
@@ -54,11 +54,17 @@ public class FloorLayout : MonoBehaviour {
                 _layout[i, j] = FieldStatus.Free;
             }
         }
+        foreach (var invalidField in invalidFields) {
+            _layout[invalidField.x, invalidField.z] = FieldStatus.Invalid;
+        }
     }
 
+#if (UNITY_EDITOR)
+    public bool alwaysShowGrid = false;
+    
     private void OnDrawGizmos() {
         Gizmos.color = Color.blue;
-        if (AlwaysShowGrid) {
+        if (alwaysShowGrid) {
             DrawGrid();
         }
         else {
@@ -84,7 +90,9 @@ public class FloorLayout : MonoBehaviour {
             Gizmos.DrawLine(new Vector3(-0.5f, 0.0f, z - 0.5f), new Vector3(tilesX - 0.5f, 0.0f, z - 0.5f));
         }
 
-        DrawFieldDisabled(0, 1);
+        foreach (var invalidField in invalidFields) {
+            DrawFieldDisabled(invalidField.x, invalidField.z);
+        }
     }
 
     private void DrawFieldDisabled(int x, int z) {
@@ -92,20 +100,37 @@ public class FloorLayout : MonoBehaviour {
         Gizmos.DrawLine(new Vector3(x - 0.5f, 0.0f, z - 0.5f), new Vector3(x + 0.5f, 0.0f, z + 0.5f));
     }
 
+#endif
 
     public bool IsFieldAllowed(ref Field field) {
         return 0 <= field.x && field.x < tilesX && 0 <= field.z && field.z < tilesZ;
     }
 
-    public FieldStatus GetFieldStatus(int x, int z) {
-        return _layout[x, z];
+    public FieldStatus GetFieldStatus(ref Field field) {
+        return _layout[field.x, field.z];
     }
 
-    public void Occupy(int x, int z) {
-        _layout[x, z] = FieldStatus.Occupied;
+    public void Occupy(Field field) {
+        if (_layout[field.x, field.z] == FieldStatus.Player) {
+            _playerControls.BounceBack();
+        }
+        _layout[field.x, field.z] = FieldStatus.Occupied;
     }
 
-    public void Free(int x, int z) {
-        _layout[x, z] = FieldStatus.Free;
+    private PlayerControls _playerControls = null;
+    private Field _playerField = Field.Zero;
+    public void SetPlayerController(PlayerControls playerControls) {
+        _playerControls = playerControls;
+    }
+
+    public void SetPlayer(Field field) {
+        _layout[_playerField.x, _playerField.z] = FieldStatus.Free;
+        _layout[field.x, field.z] = FieldStatus.Player;
+        _playerField = field;
+        //Debug.Log("Player Field: " + _playerField.x + " " + _playerField.z);
+    }
+
+    public void Free(Field field) {
+        _layout[field.x, field.z] = FieldStatus.Free;
     }
 }

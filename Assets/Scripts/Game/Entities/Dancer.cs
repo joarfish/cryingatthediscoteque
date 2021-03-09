@@ -34,6 +34,8 @@ public class Dancer : MonoBehaviour {
         _dancerCoordinator.unregisterDancer(this);
     }
 
+    private Field __field = Field.Zero;
+
     public void Move() {
         /*var currentPosition = transform.position;
         var nextPosition = currentPosition + transform.localToWorldMatrix.MultiplyVector(movement);
@@ -41,6 +43,7 @@ public class Dancer : MonoBehaviour {
         {
             movement *= -1;
         }*/
+        var _lastWaypoint = _currentWaypoint;
         if (loop) {
             _currentWaypoint = (_currentWaypoint + 1) % waypoints.Count;
         }
@@ -58,10 +61,8 @@ public class Dancer : MonoBehaviour {
         _currentPosition = _targetPosition;
         _targetPosition = waypoints[_currentWaypoint];
         _animationTimer = 0.0f;
-
-        //_floorLayout.Free((int)currentPosition.x, (int)currentPosition.z);
-
-        //_floorLayout.Occupy((int)currentPosition.x, (int)currentPosition.z);
+        _floorLayout.Free(__field.SetFromVector3(waypoints[_lastWaypoint]));
+        _floorLayout.Occupy(__field.SetFromVector3(waypoints[_currentWaypoint]));
     }
 
     private void Update() {

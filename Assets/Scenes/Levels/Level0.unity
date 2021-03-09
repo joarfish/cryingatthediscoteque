@@ -286,7 +286,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fd6ec91051d5ae41ac6a69e0e098f39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tolerance: 0.12
+  tolerance: 0.25
   span: 0.5
 --- !u!4 &773100959
 Transform:
@@ -513,7 +513,7 @@ Camera:
   m_GameObject: {fileID: 1877179694}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
+  m_ClearFlags: 2
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -637,7 +637,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tilesX: 9
   tilesZ: 10
-  AlwaysShowGrid: 1
+  invalidFields:
+  - x: 6
+    z: 7
+  - x: 5
+    z: 5
+  - x: 5
+    z: 7
+  - x: 4
+    z: 7
+  - x: 4
+    z: 6
+  - x: 5
+    z: 6
+  - x: 6
+    z: 6
+  - x: 6
+    z: 5
+  - x: 4
+    z: 5
+  alwaysShowGrid: 1
 --- !u!1001 &2128775485
 PrefabInstance:
   m_ObjectHideFlags: 0
