@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
+using Game;
 
 [CustomEditor(typeof(Dancer))]
 public class DancerMovementEditor : Editor {
@@ -25,14 +26,15 @@ public class DancerMovementEditor : Editor {
     void OnSceneGUI() {
         var guiEvent = Event.current;
         bool action = false;
-        
-        if (guiEvent.type == EventType.MouseDown && guiEvent.button == 0 && guiEvent.modifiers == EventModifiers.Shift) {
+
+        if (guiEvent.type == EventType.MouseDown && guiEvent.button == 0 &&
+            guiEvent.modifiers == EventModifiers.Shift) {
             action = true;
             var field = GetField(guiEvent.mousePosition);
-            if (_floorLayout.IsFieldAllowed(ref field)) {
+            if (_floorLayout.IsFieldAllowed(field)) {
                 Undo.RecordObject(_dancer, "Add Dancer Waypoint");
                 _waypointsProperty.arraySize++;
-                _waypointsProperty.GetArrayElementAtIndex(_waypointsProperty.arraySize-1).vector3Value =
+                _waypointsProperty.GetArrayElementAtIndex(_waypointsProperty.arraySize - 1).vector3Value =
                     field.ToVector3(_dancer.GetDancerY());
                 serializedObject.ApplyModifiedProperties();
             }
@@ -42,7 +44,7 @@ public class DancerMovementEditor : Editor {
             _selectedWaypoint = -1;
             for (var i = 0; i < _waypointsProperty.arraySize; i++) {
                 var waypointPos = _waypointsProperty.GetArrayElementAtIndex(i).vector3Value;
-                if ((int)waypointPos.x == field.x && (int)waypointPos.z == field.z) {
+                if ((int) waypointPos.x == field.x && (int) waypointPos.z == field.z) {
                     _selectedWaypoint = i;
                     break;
                 }
@@ -51,10 +53,10 @@ public class DancerMovementEditor : Editor {
         else if (guiEvent.type == EventType.MouseDrag && guiEvent.button == 0 && _selectedWaypoint != -1) {
             action = true;
             var field = GetField(guiEvent.mousePosition);
-            if (_floorLayout.IsFieldAllowed(ref field)) {
+            if (_floorLayout.IsFieldAllowed(field)) {
                 Undo.RecordObject(_dancer, "Move Dancer Waypoint");
                 _waypointsProperty.GetArrayElementAtIndex(_selectedWaypoint).vector3Value =
-                    field.ToVector3(_dancer.GetDancerY()); 
+                    field.ToVector3(_dancer.GetDancerY());
                 _waypointsCache = null;
                 serializedObject.ApplyModifiedProperties();
             }
@@ -66,7 +68,7 @@ public class DancerMovementEditor : Editor {
         if (guiEvent.type == EventType.Layout) {
             HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
         }
-        
+
         if (guiEvent.type == EventType.MouseDown && guiEvent.button == 0 && _selectedWaypoint == -1 && !action) {
             Selection.objects = null;
         }
@@ -75,6 +77,7 @@ public class DancerMovementEditor : Editor {
     }
 
     private readonly string[] _excludedProperties = {"waypoints"};
+
     public override void OnInspectorGUI() {
         serializedObject.ApplyModifiedProperties();
         //DrawPropertiesExcluding(serializedObject, _excludedProperties);

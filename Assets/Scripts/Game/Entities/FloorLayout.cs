@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using Architecture;
+using Game;
+using Game.Systems;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,41 +15,17 @@ public enum FieldStatus {
     Player,
 }
 
-[Serializable]
-public struct Field {
-    public Field(int x, int z) {
-        this.x = x;
-        this.z = z;
-    }
-    
-    public Field(Vector3 vector) {
-        x = (int)vector.x;
-        z = (int)vector.z;
-    }
-
-    public static Field Zero => Field.ZeroField;
-    private static readonly Field ZeroField = new Field(0, 0);
-
-    public Vector3 ToVector3(float y = 0.0f) {
-        return new Vector3((float) this.x, y, (float) this.z);
-    }
-
-    public Field SetFromVector3(Vector3 vector) {
-        x = (int) vector.x;
-        z = (int) vector.z;
-        return this;
-    }
-
-    public int x;
-    public int z;
-}
-
 public class FloorLayout : MonoBehaviour {
     [Range(1, 20)] public int tilesX = 1;
     [Range(1, 20)] public int tilesZ = 1;
     public List<Field> invalidFields;
 
     private FieldStatus[,] _layout;
+    [Inject] private GameEventSystem _gameEventSystem;
+
+    public FloorLayout() {
+        SimpleDependencyInjection.getInstance().Inject(this);
+    }
 
     private void OnEnable() {
         _layout = new FieldStatus[tilesX, tilesZ];
@@ -54,14 +34,27 @@ public class FloorLayout : MonoBehaviour {
                 _layout[i, j] = FieldStatus.Free;
             }
         }
+
         foreach (var invalidField in invalidFields) {
             _layout[invalidField.x, invalidField.z] = FieldStatus.Invalid;
         }
+        
+        _gameEventSystem.OnPlayerPositionChanged += HandlePlayerPositionChanged;
+    }
+
+    public void OnDestroy() {
+        _gameEventSystem.OnPlayerPositionChanged -= HandlePlayerPositionChanged;
+    }
+
+    private void HandlePlayerPositionChanged(Field newField) {
+        _layout[_playerField.x, _playerField.z] = FieldStatus.Free;
+        _layout[newField.x, newField.z] = FieldStatus.Player;
+        _playerField = newField;
     }
 
 #if (UNITY_EDITOR)
     public bool alwaysShowGrid = false;
-    
+
     private void OnDrawGizmos() {
         Gizmos.color = Color.blue;
         if (alwaysShowGrid) {
@@ -90,6 +83,10 @@ public class FloorLayout : MonoBehaviour {
             Gizmos.DrawLine(new Vector3(-0.5f, 0.0f, z - 0.5f), new Vector3(tilesX - 0.5f, 0.0f, z - 0.5f));
         }
 
+        if (invalidFields == null) {
+            return;
+        }
+
         foreach (var invalidField in invalidFields) {
             DrawFieldDisabled(invalidField.x, invalidField.z);
         }
@@ -102,33 +99,23 @@ public class FloorLayout : MonoBehaviour {
 
 #endif
 
-    public bool IsFieldAllowed(ref Field field) {
+    public bool IsFieldAllowed(Field field) {
         return 0 <= field.x && field.x < tilesX && 0 <= field.z && field.z < tilesZ;
     }
 
-    public FieldStatus GetFieldStatus(ref Field field) {
+    public FieldStatus GetFieldStatus(Field field) {
         return _layout[field.x, field.z];
     }
 
     public void Occupy(Field field) {
         if (_layout[field.x, field.z] == FieldStatus.Player) {
-            _playerControls.BounceBack();
+            _gameEventSystem.SendDancerHitPlayer();
         }
+
         _layout[field.x, field.z] = FieldStatus.Occupied;
     }
 
-    private PlayerControls _playerControls = null;
     private Field _playerField = Field.Zero;
-    public void SetPlayerController(PlayerControls playerControls) {
-        _playerControls = playerControls;
-    }
-
-    public void SetPlayer(Field field) {
-        _layout[_playerField.x, _playerField.z] = FieldStatus.Free;
-        _layout[field.x, field.z] = FieldStatus.Player;
-        _playerField = field;
-        //Debug.Log("Player Field: " + _playerField.x + " " + _playerField.z);
-    }
 
     public void Free(Field field) {
         _layout[field.x, field.z] = FieldStatus.Free;

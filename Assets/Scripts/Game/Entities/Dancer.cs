@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Game;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ public class Dancer : MonoBehaviour {
 
     private int _currentWaypoint = 0;
     private bool _reverse = false;
-    
+
     private float _movementSpeed = 0.125f;
     private float _animationTimer = 0.0f;
     private Vector3 _targetPosition = Vector3.zero;
@@ -26,6 +27,10 @@ public class Dancer : MonoBehaviour {
         _floorLayout = FindObjectOfType<FloorLayout>();
         _dancerCoordinator = FindObjectOfType<DancerCoordinator>();
         _dancerCoordinator.registerDancer(this);
+
+        if (waypoints.Count == 0) {
+            return;
+        }
         _currentPosition = transform.position;
         _targetPosition = waypoints[_currentWaypoint];
     }
@@ -37,13 +42,12 @@ public class Dancer : MonoBehaviour {
     private Field __field = Field.Zero;
 
     public void Move() {
-        /*var currentPosition = transform.position;
-        var nextPosition = currentPosition + transform.localToWorldMatrix.MultiplyVector(movement);
-        if (!_floorLayout.IsFieldAllowed((int) nextPosition.x, (int) nextPosition.z))
-        {
-            movement *= -1;
-        }*/
-        var _lastWaypoint = _currentWaypoint;
+
+        if (waypoints.Count == 0) {
+            return;
+        }
+        
+        var lastWaypoint = _currentWaypoint;
         if (loop) {
             _currentWaypoint = (_currentWaypoint + 1) % waypoints.Count;
         }
@@ -61,32 +65,14 @@ public class Dancer : MonoBehaviour {
         _currentPosition = _targetPosition;
         _targetPosition = waypoints[_currentWaypoint];
         _animationTimer = 0.0f;
-        _floorLayout.Free(__field.SetFromVector3(waypoints[_lastWaypoint]));
+        _floorLayout.Free(__field.SetFromVector3(waypoints[lastWaypoint]));
         _floorLayout.Occupy(__field.SetFromVector3(waypoints[_currentWaypoint]));
     }
 
     private void Update() {
         _animationTimer += Time.deltaTime;
-        transform.position = Vector3.Lerp(_currentPosition, _targetPosition, MovementCurve.Evaluate(_animationTimer / _movementSpeed));
-    }
-
-    public void AddWaypoint(Field field) {
-        waypoints.Add(new Vector3((float) field.x, transform.position.y, (float) field.z));
-    }
-
-    public void RemoveWaypoint(Field field) {
-        var idx = waypoints.FindIndex((waypoint) => (int) waypoint.x == field.x && (int) waypoint.z == field.z);
-        waypoints.RemoveAt(idx);
-    }
-
-    public void UpdateWaypoint(int fieldIndex, Field field) {
-        if (fieldIndex != -1 && fieldIndex < waypoints.Count) {
-            waypoints[fieldIndex] = field.ToVector3(transform.position.y);
-        }
-    }
-
-    public int FindWaypoint(Field field) {
-        return waypoints.FindIndex((waypoint) => (int) waypoint.x == field.x && (int) waypoint.z == field.z);
+        transform.position = Vector3.Lerp(_currentPosition, _targetPosition,
+            MovementCurve.Evaluate(_animationTimer / _movementSpeed));
     }
 
     public List<Vector3> GetWaypoints() {

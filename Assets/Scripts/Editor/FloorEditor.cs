@@ -2,13 +2,13 @@
 using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
+using Game;
 
 [CustomEditor(typeof(FloorLayout))]
 public class FloorEditor : Editor {
-
     private FloorLayout _floorLayout;
     private SerializedProperty _invalidFieldsProperty;
-    
+
     private void OnEnable() {
         _floorLayout = target as FloorLayout;
         _invalidFieldsProperty = serializedObject.FindProperty("invalidFields");
@@ -36,10 +36,11 @@ public class FloorEditor : Editor {
             action = true;
             serializedObject.ApplyModifiedProperties();
         }
-        
+
         if (guiEvent.type == EventType.Layout) {
             HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
         }
+
         if (guiEvent.type == EventType.MouseDown && guiEvent.button == 0 && !action) {
             Selection.objects = null;
         }
@@ -56,7 +57,7 @@ public class FloorEditor : Editor {
 
         return -1;
     }
-    
+
     private static Field GetField(Vector2 mousePosition) {
         var worldPosition = GetFieldAsVector3(mousePosition);
 

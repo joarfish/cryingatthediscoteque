@@ -16,5 +16,5 @@ MonoBehaviour:
   loadingScreen: Loading
   gameOverScreen: GameOver
   levels:
-  - Level0
+  - Level1
   HUD: HUD

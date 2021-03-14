@@ -27,7 +27,7 @@ public class Rhythm : MonoBehaviour {
         if (_timer > newTimer) {
             _beatCount++;
         }
-        
+
         _timer = newTimer;
     }
 

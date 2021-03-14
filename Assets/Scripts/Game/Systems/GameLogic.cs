@@ -1,9 +1,9 @@
-﻿using System.Collections;
+﻿using System;
 using Application;
 using Architecture;
 using Helpers;
-using TMPro;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Game.Systems {
     public enum GameState {
@@ -20,6 +20,9 @@ namespace Game.Systems {
         [Inject] private Scheduler _scheduler;
 
         private GameState _state;
+        private Rhythm _currentRhythm;
+        private PlayerControls _player;
+        private FloorLayout _floorLayout;
 
         public GameLogic() {
             SimpleDependencyInjection.getInstance().Inject(this);
@@ -31,16 +34,17 @@ namespace Game.Systems {
 
             SimpleDependencyInjection.getInstance().Bind<GameEventSystem>(_gameEventSystem);
 
-            _gameEventSystem.OnReachedGoalArea += handleReachedGoal;
-            _gameEventSystem.OnDronesCoughtPlayer += handleDronesCaughtPlayer;
+            _gameEventSystem.OnPlayerInput += HandlePlayerInput;
+            _gameEventSystem.OnDancerHitPlayer += HandleDancerHitPlayer;
         }
 
         public void StartGame() {
             SwitchState(GameState.Paused);
             _appEventSystem.LevelReady -= StartGame;
-            _gameEventSystem.OnPositionChanged += checkFallingToDeath;
 
-            _scheduler.StartCoroutine(Countdown());
+            _currentRhythm = Object.FindObjectOfType<Rhythm>();
+            _player = Object.FindObjectOfType<PlayerControls>();
+            _floorLayout = Object.FindObjectOfType<FloorLayout>();
         }
 
         private void SwitchState(GameState state) {
@@ -48,45 +52,33 @@ namespace Game.Systems {
             _gameEventSystem.SendGameStateChanged(_state);
         }
 
-        IEnumerator Countdown() {
-            GameObject countdown = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("countdown"));
-            countdown.name = "Countdown";
-
-            TextMeshProUGUI text = countdown.GetComponentInChildren<TextMeshProUGUI>();
-
-            for (int i = 0; i < 3; i++) {
-                text.text = (3 - i).ToString();
-                yield return new WaitForSeconds(1);
+        private void HandlePlayerInput(Field newField) {
+            if (!_currentRhythm.isMoveAllowed()) {
+                
             }
-
-            text.text = "Go!";
-            SwitchState(GameState.Running);
-            UnityEngine.Object.Destroy(countdown);
-        }
-
-        void checkFallingToDeath(Vector3 position) {
-            if (_state == GameState.Running && position.y < -5.0f) {
-                SwitchState(GameState.GameOver);
-                _appEventSystem.SendGameOver();
+            else {
+                if (_floorLayout.IsFieldAllowed(newField) &&
+                    _floorLayout.GetFieldStatus(newField) == FieldStatus.Free) {
+                    _player.Move(newField);
+                    _gameEventSystem.SendPlayerPositionChanged(newField);
+                    var camera = Camera.main;
+                    if (camera) {
+                        Camera.main.backgroundColor = Color.green;
+                    }
+                }
             }
         }
 
-        void handleReachedGoal() {
-            SwitchState(GameState.LevelComplete);
-            _appEventSystem.SendLevelDone();
-        }
-
-        void handleDronesCaughtPlayer() {
-            SwitchState(GameState.GameOver);
-            _appEventSystem.SendGameOver();
+        private void HandleDancerHitPlayer() {
+            Camera.main.backgroundColor = Color.red;
+            _player.BounceBack();
         }
 
         ~GameLogic() {
             SimpleDependencyInjection.getInstance().Unbind<GameEventSystem>();
             _appEventSystem.LevelReady -= StartGame;
-            _gameEventSystem.OnReachedGoalArea -= handleReachedGoal;
-            _gameEventSystem.OnPositionChanged -= checkFallingToDeath;
-            _gameEventSystem.OnDronesCoughtPlayer -= handleDronesCaughtPlayer;
+            _gameEventSystem.OnPlayerInput -= HandlePlayerInput;
+            _gameEventSystem.OnDancerHitPlayer -= HandleDancerHitPlayer;
         }
     }
 }
