@@ -8,7 +8,12 @@ namespace Game.Systems {
         public event Action<Field> OnPlayerInput;
         public event Action<Field> OnPlayerPositionChanged;
         public event Action<Field> OnDancerMoveToField;
-        public event Action OnDancerHitPlayer;
+        public event Action<Vector3> OnDancerHitPlayer;
+        public event Action OnPlayerMovedToGoal;
+
+        public event Action OnPlayerFailed;
+
+        public event Action OnPlayerMovementNotAllowed;
 
         public void SendGameStateChanged(GameState state) {
             OnGameStateChanged?.Invoke(state);
@@ -26,8 +31,20 @@ namespace Game.Systems {
             OnPlayerInput?.Invoke(newField);
         }
 
-        public void SendDancerHitPlayer() {
-            OnDancerHitPlayer?.Invoke();
+        public void SendDancerHitPlayer(Vector3 direction) {
+            OnDancerHitPlayer?.Invoke(direction);
+        }
+
+        public void SendPlayerMovementNotAllowed() {
+            OnPlayerMovementNotAllowed?.Invoke();
+        }
+
+        public void SendPlayerMovedToGoal() {
+            OnPlayerMovedToGoal?.Invoke();
+        }
+
+        public void SendPlayerFailed() {
+            OnPlayerFailed?.Invoke();
         }
     }
 }

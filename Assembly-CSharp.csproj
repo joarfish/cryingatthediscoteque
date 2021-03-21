@@ -66,10 +66,11 @@
      <Compile Include="Assets\Scripts\Game\Entities\DancerCoordinator.cs" />
      <Compile Include="Assets\Scripts\Game\Entities\Dancer.cs" />
      <Compile Include="Assets\Scripts\GUI\MainMenuHandler.cs" />
+     <Compile Include="Assets\Scripts\Game\Helpers\Field.cs" />
      <Compile Include="Assets\Scripts\Game\Configuration\GameConfiguration.cs" />
      <Compile Include="Assets\Scripts\Game\Entities\PlayerControls.cs" />
      <Compile Include="Assets\Scripts\Game\Helpers\PausableAnimation.cs" />
-     <Compile Include="Assets\Scripts\Game\Helpers\Field.cs" />
+     <Compile Include="Assets\Scripts\Game\Systems\PlayerFeedback.cs" />
      <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
      <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />

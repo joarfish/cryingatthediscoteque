@@ -18,10 +18,11 @@ public class Dancer : MonoBehaviour {
     private int _currentWaypoint = 0;
     private bool _reverse = false;
 
-    private float _movementSpeed = 0.125f;
+    private float _movementSpeed = 0.25f;
     private float _animationTimer = 0.0f;
     private Vector3 _targetPosition = Vector3.zero;
     private Vector3 _currentPosition = Vector3.zero;
+    private Vector3 _direction = Vector3.zero;
 
     private void OnEnable() {
         _floorLayout = FindObjectOfType<FloorLayout>();
@@ -31,6 +32,9 @@ public class Dancer : MonoBehaviour {
         if (waypoints.Count == 0) {
             return;
         }
+        
+        
+        
         _currentPosition = transform.position;
         _targetPosition = waypoints[_currentWaypoint];
     }
@@ -47,7 +51,7 @@ public class Dancer : MonoBehaviour {
             return;
         }
         
-        var lastWaypoint = _currentWaypoint;
+        _lastWaypoint = _currentWaypoint;
         if (loop) {
             _currentWaypoint = (_currentWaypoint + 1) % waypoints.Count;
         }
@@ -61,25 +65,36 @@ public class Dancer : MonoBehaviour {
 
             _currentWaypoint += (_reverse ? -1 : 1);
         }
-
+        
         _currentPosition = _targetPosition;
         _targetPosition = waypoints[_currentWaypoint];
+        _direction = _currentPosition - _targetPosition;
         _animationTimer = 0.0f;
-        _floorLayout.Free(__field.SetFromVector3(waypoints[lastWaypoint]));
-        _floorLayout.Occupy(__field.SetFromVector3(waypoints[_currentWaypoint]));
+        _moving = true;
     }
+
+    private bool _moving = false;
+    private int _lastWaypoint = -1;
 
     private void Update() {
         _animationTimer += Time.deltaTime;
-        transform.position = Vector3.Lerp(_currentPosition, _targetPosition,
-            MovementCurve.Evaluate(_animationTimer / _movementSpeed));
-    }
+        if (transform.position == _targetPosition && _moving) {
+            _floorLayout.Free(__field.SetFromVector3(waypoints[_lastWaypoint]));
+            _floorLayout.Occupy(__field.SetFromVector3(waypoints[_currentWaypoint]), this);
+            _moving = false;
+        }
+        else if (_moving) {
+            transform.position = Vector3.Lerp(_currentPosition, _targetPosition,
+                MovementCurve.Evaluate(_animationTimer / _movementSpeed));
+        }
 
-    public List<Vector3> GetWaypoints() {
-        return waypoints;
     }
 
     public float GetDancerY() {
         return transform.position.y;
+    }
+
+    public Vector3 GetDirection() {
+        return _direction;
     }
 }

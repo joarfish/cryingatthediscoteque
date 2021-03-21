@@ -61,6 +61,7 @@ public class PlayerControls : MonoBehaviour {
         _currentPosition = _targetPosition;
         _targetPosition = _nextPosition;
         _animationTimer = 0.0f;
+        _gameEventSystem.SendPlayerPositionChanged(_nextField);
     }
     
     public void BounceBack() {
@@ -73,6 +74,13 @@ public class PlayerControls : MonoBehaviour {
         _targetPosition = _lastPositions.Pop();
         _nextField.SetFromVector3(_targetPosition);
         _gameEventSystem.SendPlayerPositionChanged(_nextField);
+    }
+
+    public void BounceInDirection(Vector3 direction) {
+        _animationTimer = 0.0f;
+        direction.y = 0.0f;
+        direction.Normalize();
+        Move(_nextField.SubtractByVector3(direction * 2.0f));
     }
     
     public void HandleInput() {

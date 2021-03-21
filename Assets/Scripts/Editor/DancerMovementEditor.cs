@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
@@ -12,6 +11,8 @@ public class DancerMovementEditor : Editor {
     private FloorLayout _floorLayout;
     private int _selectedWaypoint = -1;
     private SerializedProperty _waypointsProperty;
+    private SerializedObject _transformObject;
+    private SerializedProperty _serializedTransformPosition;
 
     private void OnEnable() {
         _dancer = (Dancer) target;
@@ -21,6 +22,18 @@ public class DancerMovementEditor : Editor {
         }
 
         _waypointsProperty = serializedObject.FindProperty("waypoints");
+        _transformObject = new SerializedObject(_dancer.transform);
+        _serializedTransformPosition = _transformObject.FindProperty("m_LocalPosition");
+        CheckFirstWaypointIsTransformPosition();
+    }
+
+    private void CheckFirstWaypointIsTransformPosition() {
+        if (_waypointsProperty.arraySize == 0) {
+            _waypointsProperty.arraySize++;
+        }
+
+        _waypointsProperty.GetArrayElementAtIndex(0).vector3Value = _dancer.transform.position;
+        serializedObject.ApplyModifiedProperties();
     }
 
     void OnSceneGUI() {
@@ -42,7 +55,7 @@ public class DancerMovementEditor : Editor {
         else if (guiEvent.type == EventType.MouseMove && guiEvent.button == 0) {
             var field = GetField(guiEvent.mousePosition);
             _selectedWaypoint = -1;
-            for (var i = 0; i < _waypointsProperty.arraySize; i++) {
+            for (var i = 1; i < _waypointsProperty.arraySize; i++) {
                 var waypointPos = _waypointsProperty.GetArrayElementAtIndex(i).vector3Value;
                 if ((int) waypointPos.x == field.x && (int) waypointPos.z == field.z) {
                     _selectedWaypoint = i;
@@ -57,7 +70,6 @@ public class DancerMovementEditor : Editor {
                 Undo.RecordObject(_dancer, "Move Dancer Waypoint");
                 _waypointsProperty.GetArrayElementAtIndex(_selectedWaypoint).vector3Value =
                     field.ToVector3(_dancer.GetDancerY());
-                _waypointsCache = null;
                 serializedObject.ApplyModifiedProperties();
             }
         }
@@ -75,13 +87,18 @@ public class DancerMovementEditor : Editor {
 
         DrawPath();
     }
-
-    private readonly string[] _excludedProperties = {"waypoints"};
+    
+    private Vector3 _lastPosition = Vector3.zero;
 
     public override void OnInspectorGUI() {
-        serializedObject.ApplyModifiedProperties();
-        //DrawPropertiesExcluding(serializedObject, _excludedProperties);
-        DrawDefaultInspector();
+        base.OnInspectorGUI();
+        _transformObject.Update();
+        var position = _serializedTransformPosition.vector3Value;
+        if (position != _lastPosition) {
+            CheckFirstWaypointIsTransformPosition();
+            SceneView.RepaintAll();
+            _lastPosition = _serializedTransformPosition.vector3Value;
+        }
     }
 
     private static Field GetField(Vector2 mousePosition) {
@@ -101,40 +118,30 @@ public class DancerMovementEditor : Editor {
         return worldPosition;
     }
 
-    private Vector3[] _waypointsCache = null;
     private readonly Vector3 _levelFloor = new Vector3(1.0f, 0.0f, 1.0f);
 
     private void DrawPath() {
-        var currentWaypointsList = _dancer.GetWaypoints();
-        if (_waypointsCache == null || _waypointsCache.Length != currentWaypointsList.Count) {
-            _waypointsCache = currentWaypointsList.ToArray();
-
-            for (var i = 0; i < _waypointsCache.Length; i++) {
-                _waypointsCache[i].Scale(_levelFloor);
-            }
-        }
-
-        if (_waypointsCache.Length == 0) {
-            return;
-        }
-
         if (_selectedWaypoint == 0) {
             Handles.color = Color.blue;
         }
 
-        Handles.DrawSolidDisc(_waypointsCache[0], Vector3.up, 0.125f);
+        var firstWaypoint = _waypointsProperty.GetArrayElementAtIndex(0).vector3Value;
+        firstWaypoint.Scale(_levelFloor);
+        Handles.DrawSolidDisc(firstWaypoint, Vector3.up, 0.125f);
         Handles.color = Color.white;
-
-        for (var i = 1; i < _waypointsCache.Length; i++) {
-            Handles.DrawDottedLine(_waypointsCache[i - 1], _waypointsCache[i], 5);
+        
+        for (var i = 1; i < _waypointsProperty.arraySize; i++) {
+            var waypoint1 = _waypointsProperty.GetArrayElementAtIndex(i-1).vector3Value;
+            var waypoint2 = _waypointsProperty.GetArrayElementAtIndex(i).vector3Value;
+            waypoint1.Scale(_levelFloor);
+            waypoint2.Scale(_levelFloor);
             if (i == _selectedWaypoint) {
                 Handles.color = Color.blue;
             }
-
-            Handles.DrawSolidDisc(_waypointsCache[i], Vector3.up, 0.125f);
+            Handles.DrawDottedLine(waypoint1, waypoint2, 5);
+            Handles.DrawSolidDisc(waypoint2, Vector3.up, 0.125f);
             Handles.color = Color.white;
         }
-
         HandleUtility.Repaint();
     }
 }

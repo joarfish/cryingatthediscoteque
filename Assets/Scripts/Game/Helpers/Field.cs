@@ -28,6 +28,16 @@ namespace Game {
             return this;
         }
 
+        public Field SubtractByVector3(Vector3 vector) {
+            x -= (int) vector.x;
+            z -= (int) vector.z;
+            return this;
+        }
+
+        public Field Clone() {
+            return new Field(x, z);
+        }
+
         public int x;
         public int z;
     }
